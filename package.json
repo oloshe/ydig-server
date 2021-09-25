@@ -1,0 +1,27 @@
+{
+  "name": "server_v1",
+  "version": "1.0.0",
+  "description": "",
+  "scripts": {
+    "dev": "nodemon --ignore tests/ --watch src -e ts --exec ts-node src/app.ts",
+    "start": "ts-node index.ts",
+    "build-ts": "tsc"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@typegoose/typegoose": "^9.0.1",
+    "@types/ioredis": "^4.27.4",
+    "@types/koa": "^2.13.4",
+    "@types/koa-router": "^7.4.4",
+    "@types/uuid": "^8.3.1",
+    "dotenv": "^10.0.0",
+    "ioredis": "^4.27.9",
+    "koa": "^2.13.3",
+    "koa-body": "^4.2.0",
+    "koa-router": "^10.1.1",
+    "mongoose": "^6.0.7",
+    "uuid": "^8.3.2",
+    "winston": "^3.3.3"
+  }
+}
