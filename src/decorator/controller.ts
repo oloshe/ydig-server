@@ -1,34 +1,70 @@
-// import { Func } from "@typegoose/typegoose/lib/types"
-// import Router from "koa-router"
+import { Func } from "@typegoose/typegoose/lib/types"
+import Router from "koa-router"
 
-// export const service: (target: any) => Router.IMiddleware<any, {}> = (target) => {
-//     return target.routes()
-// }
+interface ModelsMetaData {
+    prefix?: string,
+    get?: Record<string, Router.IMiddleware<any, {}> | undefined>,
+    post?: Record<string, Router.IMiddleware<any, {}> | undefined>
+}
 
-// let _innerRouter: Record<string, Router<any, {}>> = {}
+interface DecoratorInner {
+    models: Record<string, ModelsMetaData>,
+    controllers: Array<Function>
+}
 
-// export let model: (prefix: string) => ClassDecorator = function(prefix) {
-//     const router = new Router({
-//         prefix: _get_prefix(prefix),
-//     })
-//     return function (target) {
-//         _innerRouter[target.name] = router 
-//     }
-// }
+let _inner: DecoratorInner = {
+    models: {},
+    controllers: []
+}
 
-// export let func: (method: 'GET' | 'POST', prefix: string) => MethodDecorator = function (method, prefix) {
-//     return function(target, _, __) {
-//         prefix = _get_prefix(prefix)
-//         let router: Router = _innerRouter[(target as Function).name];
-//         if (!router) {
-//             console.error("没有router", (target as Function).name)
-//         }
-//         if (method === 'GET') {
-//             router.get(prefix)
-//         } else if (method === 'POST') {
-//             router.post(prefix)
-//         }
-//     }
-// }
+export let registerController = (...target: Function[]) => {
+    _inner.controllers.push(...target)
+}
 
-// let _get_prefix = (prefix: string) => prefix.startsWith("/") ? prefix : prefix.slice(1);
+export let mapRoutes = () => {
+    // console.log(_inner.models)
+    let { models } = _inner
+    let routers = []
+    for(const id in models) {
+        let { prefix, get = {}, post = {}} = models[id];
+        let router = new Router({ prefix: prefix })
+        for (const path in get) { 
+            get[path] && router.get(path, get[path]!) 
+        }
+        for (const path in post) {
+            post[path] && router.post(path, post[path]!) 
+        }
+        routers.push(router.routes())
+    }
+    return routers
+}
+
+export let model = (prefix: string): ClassDecorator => {
+    return target => {
+        exploitObj(target.name, _inner.models)
+        _inner.models[target.name].prefix = prefix
+    }
+}
+
+export let func = {
+    get: funcGen('get'),
+    post: funcGen('post'),
+}
+
+function funcGen (method: keyof Omit<ModelsMetaData, 'prefix'>) {
+    return (path: string): MethodDecorator => {
+        return (target: any, _, descriptor) => {
+            let name: string = target.name
+            exploitObj(name, _inner.models)
+            exploitObj(method, _inner.models[name])
+            let map = _inner.models[name][method]!;
+            map[path] = descriptor.value as any;
+        }
+    }
+}
+
+const exploitObj = (name: string, target: any) => {
+    if (!target[name]) {
+        target[name] = {}
+    }
+}
