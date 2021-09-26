@@ -3,8 +3,9 @@ import koaBody from 'koa-body'
 import mongoose from 'mongoose'
 import winston from 'winston'
 import { config } from './config'
-import { logger } from './logger'
-import { userRouter } from './controller/user/user'
+import { UserController } from './controller/user/user'
+import { mapRoutes, registerController } from './decorator/controller'
+import { loggerMiddleWave } from './logger'
 
 const app = new Koa()
 
@@ -13,7 +14,7 @@ mongoose.connect(config.dbConfig.databaseUrl, {
 }).then(() => {
     
     // 日志
-    app.use(logger(winston))
+    app.use(loggerMiddleWave(winston))
 
     // 解析请求体
     app.use(koaBody({
@@ -21,7 +22,8 @@ mongoose.connect(config.dbConfig.databaseUrl, {
     }))
 
     // 路由注册
-    app.use(userRouter.routes())
+    registerController(UserController)
+    mapRoutes().forEach(routers => app.use(routers))
 
     app.listen(config.port)
 })

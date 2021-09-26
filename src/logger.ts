@@ -1,9 +1,9 @@
 import { Context } from "koa";
 import { config } from "./config";
-import { transports, format } from "winston";
+import winston, { transports, format } from "winston";
 import * as path from "path";
 
-const logger = (winstonInstance: any): any  => {
+const loggerMiddleWave = (winstonInstance: any): any  => {
     winstonInstance.configure({
         level: config.debugLogging ? "debug" : "info",
         transports: [
@@ -47,4 +47,12 @@ const logger = (winstonInstance: any): any  => {
     };
 };
 
-export { logger };
+const logger = winston.createLogger({
+    transports: [new winston.transports.Console({ level: 'info' })],
+    format: format.combine(
+        format.splat(),
+        format.printf(info => `[${info.label}] ${info.message}`)
+    )
+})
+
+export { loggerMiddleWave, logger };
