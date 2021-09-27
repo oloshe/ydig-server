@@ -2,13 +2,7 @@ import { getModelForClass, prop } from "@typegoose/typegoose";
 import { redis } from "../redis/redis";
 import * as uuid from "uuid"
 
-export interface PlayerData {
-    uid?: string
-    nick?: string
-    avatar?: string
-}
-
-class Players implements PlayerData {
+class Players {
     @prop({
         unique: true,
         type: String,
@@ -34,6 +28,21 @@ class Players implements PlayerData {
         type: Number,
     })
     public lastLoginTime?: number
+
+	@prop({
+		type: String
+	})
+    public pwd?: string
+
+    @prop({
+		type: String
+	})
+    public openid?: string
+
+    @prop({
+		type: String
+	})
+    public email?: string
 }
 
 export const PlayerModel = getModelForClass(Players, {
@@ -48,7 +57,7 @@ export const PlayerModel = getModelForClass(Players, {
  * @param uid 
  * @returns 
  */
-export const getPlayer = async (uid: string): Promise<PlayerData | null> => {
+export const getPlayer = async (uid: string): Promise<Players | null> => {
     if (uuid.validate(uid)) {
         // 是游客
         console.log('is')
@@ -67,6 +76,13 @@ export const getPlayer = async (uid: string): Promise<PlayerData | null> => {
     }
 }
 
-export const setGuestPlayer = async (data: PlayerData) => {
-    await redis.set(`guest:info:${data.uid}`, JSON.stringify(data))
+export const getUidFromToken = async (token: string): Promise<string|null> => {
+	let ret = await redis.get(`token:${token}`)
+	return ret
+}
+
+export const setGuestPlayer = async (data: Players, token: string) => {
+	let uid = data.uid!
+    await redis.set(`guest:info:${uid}`, JSON.stringify(data))
+	await redis.set(`token:${token}`, uid)
 }

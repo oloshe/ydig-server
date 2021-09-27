@@ -4,7 +4,7 @@
   "description": "",
   "scripts": {
     "dev": "nodemon --ignore tests/ --watch src -e ts --exec ts-node src/app.ts",
-    "start": "ts-node index.ts",
+    "start": "ts-node src/app.ts",
     "build-ts": "tsc"
   },
   "author": "",

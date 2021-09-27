@@ -25,5 +25,7 @@ mongoose.connect(config.dbConfig.databaseUrl, {
     registerController(UserController)
     mapRoutes().forEach(routers => app.use(routers))
 
-    app.listen(config.port)
+    app.listen(config.port, () => {
+		console.log('Started Successfully')
+	})
 })
