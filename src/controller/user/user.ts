@@ -1,23 +1,22 @@
 import { Context } from 'koa'
-import * as uuid from "uuid";
 import Router from 'koa-router'
-import { getPlayer, getUidFromToken, PlayerModel, setGuestPlayer } from '../../entity/player';
+import { getPlayerByUid, getUidByToken, PlayerModel, setGuestPlayer } from '../../entity/player';
 import { redis } from '../../redis/redis';
-import { getValidateCode } from '../../utils/utils';
+import { getValidateCode, uuid } from '../../utils/utils';
 import { func, mapRoutes, model, registerController } from '../../decorator/controller';
 import { logger } from '../../logger';
 
-interface loginData {
-    account: string
-    pwd: string
-}
+// interface loginData {
+//     account: string
+//     pwd: string
+// }
 
-interface RegisterData {
-    email: string
-    pwd: string
-}
+// interface RegisterData {
+//     email: string
+//     pwd: string
+// }
 
-@model("/user")
+@model("/user", false)
 export class UserController {
     /** 验证邮箱 */
     // public static emailRegExp = /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/
@@ -47,7 +46,7 @@ export class UserController {
         let token = ctx.params.token
         // 携带id为非第一次登陆，从数据拿数据，如果拿不到则创建
         if (token) {
-			let uid = await getUidFromToken(token)
+			let uid = await getUidByToken(token)
 			if (!uid) {
 				// token 无效，重新登录
 				ctx.body = {
@@ -55,7 +54,7 @@ export class UserController {
 				}
 				return
 			}
-            let player = await getPlayer(uid)
+            let player = await getPlayerByUid(uid)
             if (player !== null) {
                 // 更新上次登陆时间
                 await PlayerModel.updateOne({ uid }, {

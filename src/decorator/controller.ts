@@ -1,8 +1,8 @@
-import { Func } from "@typegoose/typegoose/lib/types"
 import Router from "koa-router"
 
 interface ModelsMetaData {
     prefix?: string,
+    needToken?: boolean,
     get?: Record<string, Router.IMiddleware<any, {}> | undefined>,
     post?: Record<string, Router.IMiddleware<any, {}> | undefined>
 }
@@ -24,9 +24,9 @@ export let registerController = (...target: Function[]) => {
 export let mapRoutes = () => {
     // console.log(_inner.models)
     let { models } = _inner
-    let routers = []
+    let routers = [], tokenRouters = []
     for(const id in models) {
-        let { prefix, get = {}, post = {}} = models[id];
+        let { prefix, needToken, get = {}, post = {}} = models[id];
         let router = new Router({ prefix: prefix })
         for (const path in get) { 
             get[path] && router.get(path, get[path]!) 
@@ -34,15 +34,29 @@ export let mapRoutes = () => {
         for (const path in post) {
             post[path] && router.post(path, post[path]!) 
         }
-        routers.push(router.routes())
+        let routes = router.routes()
+        if (needToken) {
+            tokenRouters.push(routes)
+        } else {
+            routers.push(routes)
+        }
     }
-    return routers
+    return [routers, tokenRouters]
 }
 
-export let model = (prefix: string): ClassDecorator => {
+/**
+ * 
+ * @param prefix 
+ * @param needToken 是否需要token，默认为true
+ * @returns 
+ */
+export let model = (prefix: string, needToken: boolean = true): ClassDecorator => {
     return target => {
         exploitObj(target.name, _inner.models)
-        _inner.models[target.name].prefix = prefix
+        Object.assign(_inner.models[target.name], {
+            prefix,
+            needToken,
+        })
     }
 }
 
@@ -51,14 +65,14 @@ export let func = {
     post: funcGen('post'),
 }
 
-function funcGen (method: keyof Omit<ModelsMetaData, 'prefix'>) {
+function funcGen (method: 'get' | 'post') {
     return (path: string): MethodDecorator => {
         return (target: any, _, descriptor) => {
             let name: string = target.name
             exploitObj(name, _inner.models)
             exploitObj(method, _inner.models[name])
             let map = _inner.models[name][method]!;
-            map[path] = descriptor.value as any;
+            (map as any)[path] = descriptor.value;
         }
     }
 }

@@ -1,4 +1,4 @@
-
+import * as _uuid from "uuid"
 const validateCodeSet = `0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ`
 
 export const getValidateCode = (len = 4) => {
@@ -9,3 +9,5 @@ export const getValidateCode = (len = 4) => {
     }
     return buf
 }
+
+export const uuid = _uuid;
